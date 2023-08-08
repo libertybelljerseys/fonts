@@ -24,9 +24,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="1.8370403"
-     inkscape:cx="4138.7225"
-     inkscape:cy="918.59716"
+     inkscape:zoom="1.3949151"
+     inkscape:cx="860.98432"
+     inkscape:cy="968.87619"
      inkscape:window-width="1800"
      inkscape:window-height="1049"
      inkscape:window-x="0"
@@ -426,7 +426,7 @@
        aria-label="1234567890"
        id="text686"
        style="font-size:76.2px;line-height:25.4px;font-family:NHL_Edge_Tampa_Bay;-inkscape-font-specification:NHL_Edge_Tampa_Bay;letter-spacing:7.9375px;fill:#000000;stroke-width:2.64583;paint-order:stroke fill markers"
-       transform="matrix(1.5032675,0,0,1.5032675,-66.519053,-100.22815)"><path
+       transform="matrix(1.5032675,0,0,1.5032675,-69.222065,-79.820741)"><path
          d="m 140.86523,195.80273 -0.92968,1.7793 c -0.50565,0.96916 -1.05929,1.79918 -1.64844,2.50977 -1.56467,1.80499 -3.30084,2.96072 -5.1875,3.56445 l -1.91016,0.61133 -2.54297,14.61914 h 7.38086 l -7.84765,44.50195 h 16.09961 l 11.91211,-67.58594 z"
          style="font-family:'NFL Patriots Throwback';-inkscape-font-specification:'NFL Patriots Throwback';fill:#000000"
          id="path815" /><path
@@ -465,7 +465,8 @@
        style="fill:#800000;stroke-width:3.48146;paint-order:stroke fill markers"
        inkscape:label="white"
        d="m 1028.9152,222.19556 -18.5231,75.7213 h 12.1967 l 3.7227,-15.22145 h 21.8009 l 1.1725,15.22145 h 12.9816 l -5.8242,-75.7213 z m 9.2478,12.05269 h 6.223 l 2.8345,36.83395 h -18.067 z" /><g
-       id="g2154"><path
+       id="g2154"
+       transform="translate(-2.7030125,19.82208)"><path
          d="m 148.66855,199.09636 q -1.4097,2.70192 -3.17182,4.81647 -4.46405,5.1689 -10.3378,7.0485 l -2.34949,13.50961 H 144.2045 L 132.10459,293.0763 H 146.554 l 16.56397,-93.97994 z"
          style="font-size:76.2px;line-height:25.4px;font-family:'NFL Patriots Throwback';-inkscape-font-specification:'NFL Patriots Throwback';letter-spacing:7.9375px;fill:#800000;stroke-width:4.07899;paint-order:stroke fill markers"
          id="path954" /><path
