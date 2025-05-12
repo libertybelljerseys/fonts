@@ -4,4 +4,4 @@
 
 This is a free, open source font database meant to replicate fonts.
 
-This is licensed under GPLv3. All fonts are free to use.
+This is licensed under GPLv3. All fonts are free to use. If you use these fonts, it is required to give credit. 
