@@ -1,0 +1,150 @@
+name: Filename Schema Lint
+
+on:
+  pull_request:
+    paths:
+      - '**/*.svg'
+
+jobs:
+  lint-filenames:
+    name: Validate SVG naming schema
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed SVG files
+        id: changed
+        run: |
+          git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.svg$' > changed_svgs.txt || true
+          echo "Changed SVG files:"
+          cat changed_svgs.txt
+
+      - name: Validate filenames and paths
+        run: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          ERRORS=()
+
+          # ── Schema rules ────────────────────────────────────────────────────
+          #
+          # Expected path structure:
+          #   <LEAGUE>/<Team_Folder>/(finalized|wip)/[glyphs/]<FILENAME>.svg
+          #
+          # Filename pattern (for non-glyph files):
+          #   <TEAM>_<ERA>_<STYLE>_v<VERSION>.svg
+          #
+          # Filename pattern (for glyph files under a glyphs/ directory):
+          #   <TEAM>_<ERA>_<STYLE>_<GLYPH>.svg
+          #
+          # Allowed STYLE tokens:
+          #   jersey-numbers, jersey-numbers-home, jersey-numbers-road,
+          #   jersey-numbers-away, jersey-numbers-back, jersey-numbers-sleeve,
+          #   jersey-numbers-white, jersey-numbers-orange, jersey-numbers-3d,
+          #   jersey-numbers-cricut, jersey-numbers-noguides,
+          #   jersey-letters, jersey-letters-smallE,
+          #   wordmark, nameplate, alternate, alternate_jersey-numbers,
+          #   alternate_nameplate, captain, altcaptain,
+          #   stadiumseries_jersey-numbers, stadiumseries_jersey-numbers-away,
+          #   stadiumseries_nameplate,
+          #   winterclassic_jersey-numbers, winterclassic_nameplate,
+          #   reverseretro1_jersey-numbers, reverseretro2_jersey-numbers,
+          #   reverseretro2_nameplate,
+          #   25thanniversary_jersey-numbers, 35thanniversary_jersey-numbers,
+          #   911memorial_wordmark, retirement_nameplate,
+          #   barberpole_nameplate, hurriwhalers_jersey-numbers,
+          #   hurriwhalers_jersey-numbers-cricut, hurriwhalers_jersey-numbers-noguides,
+          #   retro_jersey-numbers, current_wordmark, pre2007_jersey-numbers
+          #
+          # Allowed LEAGUE folders: NHL, AHL, CHL, WHL, QMJHL, Other
+          # ────────────────────────────────────────────────────────────────────
+
+          VALID_LEAGUES="NHL|AHL|CHL|WHL|QMJHL|Other"
+
+          # Full filename regex for normal files:
+          # [TEAM]_[ERA]_[STYLE]_v[VERSION].svg
+          # TEAM: 2-5 uppercase letters/digits
+          # ERA: alphanumeric with hyphens (e.g. 2017-present, current, retro, pre2007)
+          # STYLE: lowercase letters, digits, hyphens (compound styles joined with _)
+          # VERSION: digits
+          NORMAL_PATTERN='^[A-Z]{2,5}_[a-zA-Z0-9-]+_[a-z0-9_-]+_v[0-9]+\.svg$'
+
+          # Glyph filename regex (no version suffix, ends with glyph identifier):
+          # [TEAM]_[ERA]_[STYLE]_[GLYPH].svg
+          # GLYPH: single uppercase letter, digit, or short descriptor
+          GLYPH_PATTERN='^[A-Z]{2,5}_[a-zA-Z0-9-]+_[a-z0-9_-]+_[A-Za-z0-9]+\.svg$'
+
+          while IFS= read -r filepath; do
+            [[ -z "$filepath" ]] && continue
+
+            filename=$(basename "$filepath")
+            dirpath=$(dirname "$filepath")
+
+            # ── 1. Check league folder ────────────────────────────────────
+            league=$(echo "$filepath" | cut -d'/' -f1)
+            if ! echo "$league" | grep -qE "^($VALID_LEAGUES)$"; then
+              ERRORS+=("❌ $filepath — top-level folder '$league' is not a valid league. Expected one of: NHL, AHL, CHL, WHL, QMJHL, Other")
+              continue
+            fi
+
+            # ── 2. Check status directory (finalized or wip) ─────────────
+            if ! echo "$dirpath" | grep -qE '/(finalized|wip)(/glyphs)?$'; then
+              ERRORS+=("❌ $filepath — file must live in a 'finalized/' or 'wip/' directory (optionally under 'glyphs/'). Got: $dirpath")
+              continue
+            fi
+
+            # ── 3. Validate filename pattern ─────────────────────────────
+            is_glyph=false
+            if echo "$dirpath" | grep -q '/glyphs$'; then
+              is_glyph=true
+            fi
+
+            if $is_glyph; then
+              if ! echo "$filename" | grep -qE "$GLYPH_PATTERN"; then
+                ERRORS+=("❌ $filepath — glyph filename '$filename' doesn't match pattern: TEAM_ERA_STYLE_GLYPH.svg (all lowercase style, uppercase team). Example: BOS_current_jersey-letters_A.svg")
+              fi
+            else
+              if ! echo "$filename" | grep -qE "$NORMAL_PATTERN"; then
+                ERRORS+=("❌ $filepath — filename '$filename' doesn't match pattern: TEAM_ERA_STYLE_vN.svg (all lowercase style, uppercase team). Example: TOR_2020-present_jersey-numbers_v1.svg")
+              fi
+            fi
+
+            # ── 4. No spaces in filename ──────────────────────────────────
+            if echo "$filename" | grep -q ' '; then
+              ERRORS+=("❌ $filepath — filename contains spaces. Use underscores or hyphens instead.")
+            fi
+
+            # ── 5. No uppercase in style/era portion ─────────────────────
+            # Extract everything after the team prefix (first segment before _)
+            rest="${filename#*_}"
+            if echo "$rest" | grep -qE '[A-Z]'; then
+              ERRORS+=("❌ $filepath — era/style/version portion '$rest' contains uppercase letters. Only the team prefix should be uppercase.")
+            fi
+
+          done < changed_svgs.txt
+
+          # ── Report results ───────────────────────────────────────────────
+          if [[ ${#ERRORS[@]} -gt 0 ]]; then
+            echo ""
+            echo "🚨 Filename schema violations found:"
+            echo ""
+            for err in "${ERRORS[@]}"; do
+              echo "  $err"
+            done
+            echo ""
+            echo "📖 Naming schema: TEAM_ERA_STYLE_vN.svg"
+            echo "   Examples:"
+            echo "     NHL/Toronto_Maple_Leafs/finalized/TOR_2020-present_jersey-numbers_v1.svg"
+            echo "     NHL/Boston_Bruins/finalized/glyphs/BOS_current_jersey-letters_A.svg"
+            echo "     AHL/Chicago_Wolves/finalized/CHIW_current_jersey-numbers_v1.svg"
+            echo ""
+            echo "   Valid status dirs: finalized/, wip/, finalized/glyphs/, wip/glyphs/"
+            echo "   Valid leagues:     NHL, AHL, CHL, WHL, QMJHL, Other"
+            exit 1
+          else
+            echo "✅ All SVG filenames pass schema validation."
+          fi
